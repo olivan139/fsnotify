@@ -3,7 +3,7 @@ on:
   pull_request:
     paths: ['**.go', 'go.mod', '.github/workflows/*']
   push:
-    branches: ['main', 'aix']
+    paths: ['**.go', 'go.mod', '.github/workflows/*']
 
 jobs:
   linux:
@@ -18,11 +18,8 @@ jobs:
       - uses: 'actions/setup-go@v5'
         with:
           go-version: '${{ matrix.go }}'
-      - name: test
-        run: |
-          FSNOTIFY_BUFFER=4096 go test -parallel 1 -race    ./...
-                               go test -parallel 1 -race    ./...
-          FSNOTIFY_DEBUG=1     go test -parallel 1 -race -v ./...
+      - name: 'test'
+        run: './run-ci'
 
   windows:
     strategy:
@@ -36,15 +33,8 @@ jobs:
       - uses: 'actions/setup-go@v5'
         with:
           go-version: '${{ matrix.go }}'
-      - name: test
-        run: |
-          go test -parallel 1 -race    ./...
-
-          $Env:FSNOTIFY_BUFFER = 4096
-          go test -parallel 1 -race    ./...
-
-          $Env:FSNOTIFY_DEBUG = 1
-          go test -parallel 1 -race -v ./...
+      - name: 'test'
+        run: 'bash ./run-ci'
 
   # Test gccgo
   # Needs gccgo 13, which should be available in Ubuntu 24.04.
@@ -65,7 +55,7 @@ jobs:
   # it works on Windows and Linux with Go 1.17, then it probably does on macOS
   # too.
   macos:
-    name: test
+    name: 'test'
     strategy:
       fail-fast: false
       matrix:
@@ -76,19 +66,10 @@ jobs:
       - uses: 'actions/setup-go@v5'
         with:
           go-version: '1.22'
-      - name: test
-        run: |
-          FSNOTIFY_BUFFER=4096 go test -parallel 1 -race    ./...
-                               go test -parallel 1 -race    ./...
-          FSNOTIFY_DEBUG=1     go test -parallel 1 -race -v ./...
+      - name: 'test'
+        run: './run-ci'
 
-  # OpenBSD; no -race as the VM doesn't include the comp set.
-  #
-  # TODO: should probably add this, but on my local machine the tests time out
-  #       with -race as the waits aren't long enough (OpenBSD is kind of slow),
-  #       so should probably look into that first. Go 1.19 is supposed to have a
-  #       much faster race detector, so maybe waiting until we have that is
-  #       enough.
+  # OpenBSD
   openbsd:
     runs-on: 'ubuntu-latest'
     name: 'test (openbsd, 1.17)'
@@ -98,12 +79,13 @@ jobs:
         id:   'openbsd'
         uses: 'vmactions/openbsd-vm@v1'
         with:
-          prepare: pkg_add go
+          prepare: 'pkg_add go'
           run: |
             useradd -mG wheel action
-            FSNOTIFY_BUFFER=4096 su action -c 'go test -parallel 1    ./...'
-                                 su action -c 'go test -parallel 1    ./...'
-            FSNOTIFY_DEBUG=1     su action -c 'go test -parallel 1 -v ./...'
+            export GO_NORACE=1
+            export GO_NOPARALLEL=1
+            export GO_COUNT=1
+            su action -c './run-ci'
 
   # NetBSD
   netbsd:
@@ -115,13 +97,12 @@ jobs:
         id:   'netbsd'
         uses: 'vmactions/netbsd-vm@v1'
         with:
-          prepare: pkg_add go
-          # TODO: no -race for the same reason as OpenBSD (the timing; it does run).
+          prepare: 'pkg_add go'
           run: |
             useradd -mG wheel action
-            FSNOTIFY_BUFFER=4096 su action -c '/usr/pkg/bin/go??? test -parallel 1    ./...'
-                                 su action -c '/usr/pkg/bin/go??? test -parallel 1    ./...'
-            FSNOTIFY_DEBUG=1     su action -c '/usr/pkg/bin/go??? test -parallel 1 -v ./...'
+            export GO=$(echo /usr/pkg/bin/go???)
+            export GO_COUNT=1
+            su action -c './run-ci'
 
   # DragonFlyBSD
   dragonflybsd:
@@ -133,13 +114,11 @@ jobs:
         id:   'dragonflybsd'
         uses: 'vmactions/dragonflybsd-vm@v1'
         with:
-          prepare: pkg install -y go
-          # TODO: no -race for the same reason as OpenBSD (the timing; it does run).
+          prepare: 'pkg install -y go'
           run: |
             pw user add -mG wheel -n action
-            env FSNOTIFY_BUFFER=4096 su action -c 'go test -parallel 1    ./...'
-                                     su action -c 'go test -parallel 1    ./...'
-            env FSNOTIFY_DEBUG=1     su action -c 'go test -parallel 1 -v ./...'
+            setenv GO_NORACE 1
+            su action -c './run-ci'
 
   # illumos
   illumos:
@@ -156,9 +135,9 @@ jobs:
           useradd action
           export GOCACHE=/tmp/go-cache
           export GOPATH=/tmp/go-path
-          FSNOTIFY_BUFFER=4096 su action -c '/opt/ooce/go-1.22/bin/go test -parallel 1    ./...'
-                               su action -c '/opt/ooce/go-1.22/bin/go test -parallel 1    ./...'
-          FSNOTIFY_DEBUG=1     su action -c '/opt/ooce/go-1.22/bin/go test -parallel 1 -v ./...'
+          export GO=/opt/ooce/go-1.22/bin/go
+          export GO_NORACE=1
+          su action -c './run-ci'
 
 
   # Solaris
@@ -178,6 +157,4 @@ jobs:
   #         useradd action
   #         export GOCACHE=/tmp/go-cache
   #         export GOPATH=/tmp/go-path
-  #         FSNOTIFY_BUFFER=4096 su action -c 'go test -parallel 1    ./...'
-  #                              su action -c 'go test -parallel 1    ./...'
-  #         FSNOTIFY_DEBUG=1     su action -c 'go test -parallel 1 -v ./...'
+  #         su action -c './run-ci'

@@ -80,11 +80,16 @@ func TestWatchMultipleWrite(t *testing.T) {
 	if err := fp.Close(); err != nil {
 		t.Fatal(err)
 	}
+	eventSeparator()
 
-	cmpEvents(t, tmp, w.stop(t), newEvents(t, `
-		write  /file  # write X
-		write  /file  # write Y
-	`))
+	ev := w.stop(t)
+	// This can appear as one or two write events.
+	if len(ev) == 1 {
+		cmpEvents(t, tmp, ev, newEvents(t, `write /file`))
+	} else {
+		cmpEvents(t, tmp, ev, newEvents(t, "write /file\nwrite /file"))
+	}
+
 }
 
 // Remove watched file with open fd
@@ -149,17 +154,17 @@ func TestWatchRemoveWatchedDir(t *testing.T) {
 
 	if runtime.GOOS != "windows" {
 		cmpEvents(t, tmp, w.stop(t), newEvents(t, `
-				remove    /
-				remove    /a
-				remove    /b
-				remove    /c
-				remove    /d
-				remove    /e
-				remove    /f
-				remove    /g
-				remove    /h
-				remove    /i
-				remove    /j`))
+			remove    /
+			remove    /a
+			remove    /b
+			remove    /c
+			remove    /d
+			remove    /e
+			remove    /f
+			remove    /g
+			remove    /h
+			remove    /i
+			remove    /j`))
 		return
 	}
 

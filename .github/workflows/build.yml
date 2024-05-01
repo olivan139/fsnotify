@@ -40,6 +40,6 @@ jobs:
                 esac
             esac
 
-            go test -c
-            go build ./cmd/fsnotify
+            go test -c || exit 1
+            go build ./cmd/fsnotify || exit 1
           done

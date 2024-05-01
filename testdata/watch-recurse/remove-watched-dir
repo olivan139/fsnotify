@@ -20,6 +20,8 @@ mkdir /watch/j/a
 watch /watch/...
 rm -r /watch
 
+# TODO: this can be flaky on Windows; as sometimes a directory entry is missing.
+# Maybe we should add some "allow 2 missing" flag or something.
 Output:
 	remove      /watch/a
 	remove      /watch/b

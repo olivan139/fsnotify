@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -euC
+
+go=${GO:-go}
+race='-race'
+par=
+cnt=${GO_COUNT:-10}
+[ -n "${GO_NORACE:-}" ]     && race=
+[ -n "${GO_NOPARALLEL:-}" ] && par='-parallel=1'
+
+
+# Run tests once for quick exit if something is just wrong; then run it ten
+# times to catch flaky tests.
+set -x
+                         $go test $race $par -count=1    ./... || exit 1
+env FSNOTIFY_BUFFER=4096 $go test $race $par             ./... || exit 1
+                         $go test $race $par -count=$cnt ./... || exit 1
