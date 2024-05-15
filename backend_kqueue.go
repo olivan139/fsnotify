@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify/internal"
+	"github.com/olivan139/fsnotify/internal"
 	"golang.org/x/sys/unix"
 )
 
@@ -533,7 +533,7 @@ func (w *kqueue) readEvents() {
 					if found {
 						// TODO: this branch is never triggered in any test.
 						// Added in d6220df (2012).
-						// isDir check added in 8611c35 (2016): https://github.com/fsnotify/fsnotify/pull/111
+						// isDir check added in 8611c35 (2016): https://github.com/olivan139/fsnotify/pull/111
 						//
 						// I don't really get how this can be triggered either.
 						// And it wasn't triggered in the patch that added it,
