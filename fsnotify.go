@@ -474,7 +474,7 @@ func withNoFollow() addOpt {
 }
 
 // "Internal" option for recursive watches on inotify.
-func withCreate() addOpt {
+func WithCreate() addOpt {
 	return func(opt *withOpts) { opt.sendCreate = true }
 }
 
